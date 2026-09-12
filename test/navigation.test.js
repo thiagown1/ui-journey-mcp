@@ -74,6 +74,20 @@ test('Flutter nested module routes survive interpolation and block-bodied builde
   assert.deepEqual(result.declarations.map(d => [d.kind, d.route, d.targetClass]), [['child', '/', 'RootPage'], ['module', '/profile', 'ProfileModule']]);
 });
 
+test('application routes named coverage are indexed while root build output is excluded', async t => {
+  const f = await fixture(t);
+  await f.put('web/app/coverage/page.tsx', 'export default function Page(){return null}');
+  await f.put('web/coverage/output.tsx', 'router.push("/fake")');
+  await f.put('mobile/pubspec.lock', 'version: 1');
+  const first = await f.index.sync();
+  assert.ok(first.routes.some(r => r.route === '/coverage'));
+  assert.equal(first.fileHashes['web/coverage/output.tsx'], undefined);
+  await f.put('mobile/pubspec.lock', 'version: 2');
+  const changed = compareNavigation(first, await f.index.sync());
+  assert.ok(changed.changedFiles.includes('mobile/pubspec.lock'));
+  assert.equal(changed.affectedRoutes.length, first.routes.length);
+});
+
 test('real MCP connection refreshes edited checkout, isolates projects and fails visibly on invalid configuration', async t => {
   const f = await fixture(t);
   const client = new Client({ name: 'navigation-test', version: '1.0.0' });

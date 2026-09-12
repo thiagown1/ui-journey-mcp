@@ -8,7 +8,7 @@ import { extractWeb, extractFlutter } from './discovery.js';
 const hash = value => createHash('sha256').update(value).digest('hex');
 const safe = z.string().min(1).max(240).refine(s => !path.posix.isAbsolute(s) && !/[\\\0\r\n:]/.test(s) && !s.split('/').some(p => !p || p === '..' || p === '.'));
 const configSchema = z.object({ schema: z.literal('ui-journey-project/v1'), project: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/), webRoots: z.array(safe).max(20).default([]), flutterRoots: z.array(z.object({ root: safe, package: z.string().regex(/^[a-z][a-z0-9_]*$/), rootModule: z.string().regex(/^\w+$/).default('AppModule') }).strict()).max(20).default([]) }).strict();
-const ignored = /(?:^|\/)(?:node_modules|\.git|\.next|build|dist|test-results|coverage|__tests__|e2e|test|tests|scripts)\/|\.(?:test|spec|d)\.[jt]sx?$|\.(?:g|freezed)\.dart$/;
+const ignored = /(?:^|\/)(?:node_modules|\.git|\.next|__tests__|e2e|scripts)\/|\.(?:test|spec|d)\.[jt]sx?$|\.(?:g|freezed)\.dart$/;
 const code = f => /\.[cm]?[jt]sx?$|\.dart$/.test(f);
 const within = (file, root) => file.startsWith(root + '/');
 function git(repo, args, options = {}) { return execFileSync('git', ['-c', 'core.fsmonitor=false', ...args], { cwd: repo, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, windowsHide: true, ...options }); }
@@ -34,7 +34,7 @@ async function readTree(repo, revision, configFile) {
   const roots = [...config.webRoots, ...config.flutterRoots.map(r => r.root)];
   if (!roots.length) throw new Error('Configure at least one source root');
   const all = [...new Set(git(repo, revision ? ['ls-tree', '-rz', '--name-only', revision, '--', ...roots] : ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', ...roots]).split('\0').filter(Boolean))].sort();
-  const files = all.filter(f => !ignored.test(f) && (code(f) || /\.(?:json|css|scss|yaml|yml)$/.test(f)) && roots.some(r => within(f, r)));
+  const files = all.filter(f => !ignored.test(f) && (code(f) || /\.(?:json|css|scss|yaml|yml)$|\/pubspec\.lock$/.test(f)) && roots.some(r => within(f, r) && !/^(?:build|dist|test-results|coverage|test|tests)\//.test(f.slice(r.length + 1))));
   if (files.length > 20000) throw new Error('Source file limit exceeded');
   const sources = {}; let total = 0;
   if (revision) {
