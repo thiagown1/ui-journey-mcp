@@ -1,0 +1,8 @@
+node_modules/
+.ui-journey/
+test-results/
+coverage/
+*.tgz
+.env
+.env.*
+next/scripts/tmp/
