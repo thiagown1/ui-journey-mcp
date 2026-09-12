@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { affectsAllRoutes } from './navigation.js';
 
 const selection = { project: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/) };
 export function registerNavigationTools(server, index) {
@@ -19,7 +20,7 @@ export function registerNavigationTools(server, index) {
           result = { project, revision, contentHash, dirty, indexedAt, status, evidence: 'inferred', exhaustive: false };
           if (name === 'get_index_status') Object.assign(result, { stats: graph.stats, routes: graph.routes.length, actions: graph.actions.length, unresolved: graph.edges.filter(e => e.resolution === 'unresolved').length, diagnostics: graph.diagnostics.length, ciGuidance: 'Reconcile exact base/head revisions in CI; attach validated before/after screenshots in a managed PR body block. Missing execution must stay explicit.' });
           else {
-            let items = name === 'get_navigation_impact' ? graph.routes.filter(r => r.dependencies.some(f => args.files.includes(f))) : graph[args.kind];
+            let items = name === 'get_navigation_impact' ? graph.routes.filter(r => affectsAllRoutes(args.files) || r.dependencies.some(f => args.files.includes(f))) : graph[args.kind];
             if (args.file) items = items.filter(item => item.file === args.file || item.dependencies?.includes(args.file));
             const sliced = items.slice(args.offset, args.offset + args.limit);
             Object.assign(result, { items: sliced, total: items.length, nextOffset: args.offset + sliced.length < items.length ? args.offset + sliced.length : null });

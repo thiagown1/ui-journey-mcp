@@ -11,6 +11,7 @@ const configSchema = z.object({ schema: z.literal('ui-journey-project/v1'), proj
 const ignored = /(?:^|\/)(?:node_modules|\.git|\.next|__tests__|e2e|scripts)\/|\.(?:test|spec|d)\.[jt]sx?$|\.(?:g|freezed)\.dart$/;
 const code = f => /\.[cm]?[jt]sx?$|\.dart$/.test(f);
 const within = (file, root) => file.startsWith(root + '/');
+export const affectsAllRoutes = files => files.some(f => /(?:\.ui-journey\.json|package(?:-lock)?\.json|pnpm-lock\.yaml|pubspec\.(?:yaml|lock)|next\.config\.|\/styles\/)/.test(f));
 function git(repo, args, options = {}) { return execFileSync('git', ['-c', 'core.fsmonitor=false', ...args], { cwd: repo, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, windowsHide: true, ...options }); }
 async function regularRead(repo, file) {
   safe.parse(file);
@@ -120,7 +121,7 @@ function assemble(tree, parsed) {
   for (const r of unique) for (const a of actions.filter(a => a.action === 'navigate' && r.dependencies.includes(a.file))) {
     const normalized = a.target?.split(/[?#]/)[0]?.replace(/\/$/, '') || a.target;
     const targets = unique.filter(to => to.platform === r.platform && (to.route.replace(/\/$/, '') || '/') === normalized);
-    edges.push({ from: r.id, action: a.id, target: a.target, to: targets.map(t => t.id), resolution: targets.length === 1 ? 'resolved' : a.target && /^(https?:|mailto:|tel:)/.test(a.target) ? 'external' : 'unresolved', evidence: 'inferred' });
+    edges.push({ from: r.id, file: a.file, action: a.id, target: a.target, to: targets.map(t => t.id), resolution: targets.length === 1 ? 'resolved' : a.target && /^(https?:|mailto:|tel:)/.test(a.target) ? 'external' : 'unresolved', evidence: 'inferred' });
   }
   return { routes: unique, actions, edges, diagnostics, imports };
 }
@@ -160,7 +161,7 @@ export function compareNavigation(before, after) {
   if (before.project !== after.project) throw new Error('Cannot compare different projects');
   const files = [...new Set([...Object.keys(before.fileHashes), ...Object.keys(after.fileHashes)])].filter(f => before.fileHashes[f] !== after.fileHashes[f]);
   const changed = new Set(files);
-  const globalChange = files.some(f => /(?:\.ui-journey\.json|package(?:-lock)?\.json|pnpm-lock\.yaml|pubspec\.(?:yaml|lock)|next\.config\.|\/styles\/)/.test(f));
+  const globalChange = affectsAllRoutes(files);
   const affectedRoutes = [...new Map([...before.routes, ...after.routes].filter(r => globalChange || r.dependencies.some(f => changed.has(f))).map(r => [r.id, { id: r.id, route: r.route, platform: r.platform, file: r.file }])).values()];
   return { schema: 'ui-navigation-impact/v1', project: after.project, before: { revision: before.revision, contentHash: before.contentHash, dirty: before.dirty }, after: { revision: after.revision, contentHash: after.contentHash, dirty: after.dirty }, changedFiles: files, affectedRoutes, addedRoutes: after.routes.filter(r => !before.routes.some(b => b.id === r.id)).map(r => r.id), removedRoutes: before.routes.filter(r => !after.routes.some(a => a.id === r.id)).map(r => r.id), unresolved: after.edges.filter(e => e.resolution === 'unresolved').length, evidence: 'inferred' };
 }

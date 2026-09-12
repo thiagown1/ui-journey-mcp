@@ -100,6 +100,10 @@ test('real MCP connection refreshes edited checkout, isolates projects and fails
   const updated = (await call('get_navigation_map', { limit: 100 })).structuredContent;
   assert.ok(updated.items.some(r => r.route === '/fresh'));
   assert.notEqual(updated.contentHash, initial.contentHash);
+  const edges = (await call('get_navigation_map', { kind: 'edges', file: 'web/app/shared.tsx' })).structuredContent;
+  assert.ok(edges.items.some(e => e.target === '/members'));
+  const global = (await call('get_navigation_impact', { files: ['.ui-journey.json'], limit: 100 })).structuredContent;
+  assert.equal(global.total, updated.total);
   assert.equal((await call('get_index_status', { project: 'another' })).structuredContent.status, 'project_not_configured');
   await f.put('.ui-journey.json', '{}');
   assert.equal((await call('get_index_status')).isError, true);
