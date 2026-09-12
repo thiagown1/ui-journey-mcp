@@ -1,0 +1,55 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { fileURLToPath } from 'node:url';
+import { fixture } from './helpers.js';
+import { validateFlow, localOrigin } from '../src/browser.js';
+import { query } from '../src/query.js';
+import { hash, validatePng } from '../src/store.js';
+
+test('real browser captures a flow, returns PNG through MCP, records a regression and blocks POST', { timeout: 60000 }, async t => {
+  const store = await fixture(t);
+  const flow = JSON.parse(await fs.readFile(new URL('../examples/help-flow.json', import.meta.url)));
+  let html = await fs.readFile(new URL('../examples/site/index.html', import.meta.url), 'utf8'), writes = 0;
+  const server = http.createServer((req, res) => {
+    if (req.method === 'POST') writes++;
+    res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(html);
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const params = { project: 'demo', flow, origin, channel: process.env.UI_JOURNEY_BROWSER_CHANNEL };
+  const first = await validateFlow(store, { ...params, revision: 'a'.repeat(40) });
+  const evidence = await query(store, 'get_flow_evidence', { project: 'demo', flow: 'help', revision: 'a'.repeat(40) });
+  assert.equal(evidence.runs[0].result, 'verified');
+  const imageDigest = evidence.runs[0].states[1].images[0].digest;
+  const bytes = await store.image('demo', imageDigest);
+  assert.equal(hash(bytes), imageDigest);
+  assert.equal(validatePng(bytes).width, 1440);
+  await assert.rejects(store.image('other', imageDigest), /not referenced/);
+  const client = new Client({ name: 'browser-evidence-test', version: '1.0.0' });
+  t.after(() => client.close());
+  await client.connect(new StdioClientTransport({ command: process.execPath, args: [fileURLToPath(new URL('../bin/ui-journey.js', import.meta.url)), 'serve', '--store', store.root], stderr: 'pipe' }));
+  const result = await client.callTool({ name: 'get_evidence_image', arguments: { project: 'demo', digest: imageDigest } });
+  assert.equal(result.content[0].type, 'image');
+  assert.deepEqual(Buffer.from(result.content[0].data, 'base64'), bytes);
+  // Synthetic demo evidence only; never copy application/customer data here.
+  const output = new URL('../test-results/', import.meta.url);
+  await fs.mkdir(output, { recursive: true });
+  await fs.writeFile(new URL('demo-evidence.png', output), Buffer.from(result.content[0].data, 'base64'));
+  const resource = await client.readResource({ uri: `ui-evidence://demo/${imageDigest}` });
+  assert.deepEqual(Buffer.from(resource.contents[0].blob, 'base64'), bytes);
+  html = html.replace("document.querySelector('#answer').hidden = false;", "fetch('/mutation', {method:'POST'}).catch(() => {});");
+  await validateFlow(store, { ...params, revision: 'b'.repeat(40) });
+  const comparison = await query(store, 'compare_flow', { project: 'demo', flow: 'help', before: first.revision, after: 'b'.repeat(40) });
+  assert.equal(comparison.after.runs[0].result, 'failed');
+  assert.equal(writes, 0);
+  html = '<h1>A static page</h1>';
+  const single = { ...flow, states: [{ id: 'closed', assertions: [{ kind: 'visible', locator: { role: 'heading', name: 'A static page' } }] }], transitions: [] };
+  await validateFlow(store, { ...params, flow: single, revision: 'c'.repeat(40), viewport: 'mobile' });
+  assert.equal((await query(store, 'get_flow_evidence', { project: 'demo', flow: 'help', revision: 'c'.repeat(40) })).runs[0].result, 'verified');
+  for (const url of ['https://example.com', 'http://127.0.0.1.example.com', 'http://user:secret@localhost']) assert.throws(() => localOrigin(url));
+});
