@@ -1,0 +1,15 @@
+{
+  "id": "help",
+  "title": "Help accordion",
+  "route": "/",
+  "profile": "anonymous",
+  "effects": "read-only",
+  "fixture": "synthetic-help-page",
+  "entryFiles": ["examples/site/index.html"],
+  "initial": "closed",
+  "states": [
+    { "id": "closed", "assertions": [{ "kind": "attribute", "locator": { "role": "button", "name": "Open answer" }, "name": "aria-expanded", "value": "false" }] },
+    { "id": "open", "assertions": [{ "kind": "visible", "locator": { "role": "text", "name": "Your evidence stays with your project." } }] }
+  ],
+  "transitions": [{ "id": "open-answer", "from": "closed", "to": "open", "action": { "kind": "click", "locator": { "role": "button", "name": "Open answer" } } }]
+}
