@@ -6,14 +6,14 @@ Describe the observable behavior and why it changes.
 
 - [ ] Concrete, verifiable behavior
 
-## Cenários cobertos
+## Covered Scenarios
 
 - [ ] Happy path and meaningful failure/edge case
 
-## Testes
+## Tests
 
 List executed commands and results. Do not mark planned checks as passed.
 
-## Riscos e Rollback
+## Risks and Rollback
 
 Describe limitations, compatibility, data/security effects and how to revert.

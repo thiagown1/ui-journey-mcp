@@ -1,5 +1,8 @@
 # Contributing
 
+Write code, comments, documentation, examples, issues and pull requests in English.
+Use English headings from the repository's pull request template.
+
 Keep the model independent of applications and clients. Adapters must distinguish
 declarations from observations and make source/version provenance explicit.
 Never commit production data or real customer screenshots.

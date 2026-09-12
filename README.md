@@ -50,6 +50,45 @@ or escape backslashes in JSON. Restart/reconnect the client after adding a serve
 The default store is `~/.ui-journey/store`. Use a persistent directory or mounted
 volume for long-term storage. Records never expire automatically; back up the store.
 
+### Codex setup
+
+Register a stable checkout with absolute paths, outside a temporary worktree:
+
+```sh
+codex mcp add ui-journey-mcp -- /absolute/path/to/node /absolute/path/ui-journey-mcp/bin/ui-journey.js serve --store /private/path/ui-evidence
+codex mcp get ui-journey-mcp --json
+```
+
+This adds a server to the host's global Codex configuration, shared by the local
+desktop app, CLI and IDE extension. Restart/reconnect your client and inspect
+`/mcp` to confirm the connection. An enabled configuration entry alone does not
+prove that an existing session loaded the server. See the official
+[Codex MCP setup guide](https://developers.openai.com/codex/mcp).
+
+Once connected, ask for `list_flows` with your project ID, then
+`get_flow_evidence` with a mapped flow and exact revision. Retrieve a returned
+image digest with `get_evidence_image` to verify image delivery as well.
+
+Availability does not mean invocation on every message. Agents select tools for
+the task; this server does not intercept other calls or automatically collect
+new screenshots. Codebase Memory can coexist as a separate server, but is not a
+dependency. To encourage consistent use, add this guidance to the consuming
+project's `AGENTS.md`, replacing the project ID:
+
+```markdown
+For UI changes, consult UI Journey MCP using project="your-project":
+- Use get_ui_impact for changed files and inspect relevant mapped flows.
+- Use get_flow_evidence or compare_flow with exact commit revisions.
+- Retrieve screenshots with get_evidence_image when reviewing visual evidence.
+- Report missing, failed, stale or unverified evidence explicitly. Never treat
+  mapping alone as a successful browser validation.
+- If the server is unavailable, state that limitation; do not invent evidence.
+```
+
+These instructions guide tool selection; enforce required browser validation in
+CI if it must be a merge requirement. Import new collector output into the
+configured store to keep evidence up to date.
+
 ## Try a local flow
 
 ```sh
