@@ -1,6 +1,6 @@
 {
   "name": "ui-journey-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mapped UI flows and revision-bound browser evidence over MCP and CLI",
   "type": "module",
   "license": "MIT",

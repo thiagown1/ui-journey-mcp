@@ -9,6 +9,9 @@ import { extractFlutter } from '../src/discovery.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { fileURLToPath } from 'node:url';
+import { auditUI } from '../src/audit.js';
+import { EvidenceStore } from '../src/store.js';
+import { snapshot, flow } from './helpers.js';
 
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'journey-index-'));
@@ -63,6 +66,18 @@ test('ignores comments, marks dynamic destinations and does not treat array.push
   assert.ok(graph.diagnostics.some(d => d.kind === 'unresolved-module'));
   await f.put('.ui-journey.json', JSON.stringify({ schema: 'ui-journey-project/v1', project: 'demo', webRoots: ['../outside'] }));
   await assert.rejects(() => f.index.sync());
+});
+
+test('audit connects an imported flow to real exact-commit source paths despite dirty local edits', async t => {
+  const f = await fixture(t);
+  const revision = f.git('rev-parse', 'HEAD');
+  const store = new EvidenceStore(path.join(f.root, '.git', 'evidence'));
+  await store.put(snapshot({ revision, flow: { ...flow, route: '/members', entryFiles: ['web/app/members/page.tsx'] } }));
+  await f.put('web/app/shared.tsx', 'export const Shared = () => null;');
+  const result = await auditUI(store, { project: 'demo', flow: 'help', revision, entryRoutes: ['/'], checks: ['navigation'] }, { index: f.index });
+  assert.equal(result.navigation.status, 'analyzed');
+  assert.deepEqual(result.navigation.paths[0].routes, ['/', '/members']);
+  assert.equal(result.navigation.revision, revision);
 });
 
 test('Flutter nested module routes survive interpolation and block-bodied builders', () => {

@@ -5,7 +5,7 @@ import os from 'node:os';
 import fs from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { NavigationIndex, compareNavigation } from '../src/navigation.js';
-import { EvidenceStore, query, importGraph, importSnapshot, createServer } from '../src/index.js';
+import { EvidenceStore, query, importGraph, importSnapshot, createServer, auditUI } from '../src/index.js';
 import { readJson } from '../src/store.js';
 import { summarize } from '../src/query.js';
 
@@ -35,6 +35,7 @@ try {
     result = compareNavigation(await readJson(values.before), await readJson(values.after));
     if (values.output) { await fs.mkdir(path.dirname(path.resolve(values.output)), { recursive: true }); await fs.writeFile(values.output, JSON.stringify(result, null, 2) + '\n'); }
   } else if (command === 'query') result = await query(store, positionals[1], JSON.parse(values.args ?? '{}'));
+  else if (command === 'audit') result = await auditUI(store, JSON.parse(values.args ?? '{}'), { index });
   else if (command === 'import-graph') result = await importGraph(store, { graph: values.graph, images: values.images, project: values.project,
     run: values.run, observedAt: values['observed-at'] ?? null, pr: values.pr ? Number(values.pr) : undefined, side: values.side });
   else if (command === 'import') result = await importSnapshot(store, values.file, values.images);
@@ -46,6 +47,7 @@ try {
     if (result.result !== 'verified') process.exitCode = 1;
   } else if (command === 'help' || !command) result = {
     commands: ['serve --store PATH [--repo CHECKOUT] [--config .ui-journey.json] [--interval 5000]', 'index --repo CHECKOUT [--revision SHA] [--output FILE]', 'compare-index --before FILE --after FILE [--output FILE]', 'query TOOL --args JSON --store PATH', 'import --file SNAPSHOT --images DIR --store PATH',
+      'audit --args JSON --store PATH [--repo CHECKOUT] [--config .ui-journey.json]',
       'import-graph --graph FILE --images DIR --project ID --run ID --store PATH [--observed-at ISO] [--pr N] [--side before|after]',
       'validate --flow-file FILE --origin http://127.0.0.1:PORT --project ID --revision FULL_SHA --store PATH [--viewport desktop|mobile] [--channel chrome|msedge]'],
   };
