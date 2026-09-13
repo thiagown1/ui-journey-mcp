@@ -17,5 +17,5 @@ validate with `node scripts/validate-pr-body.cjs --body-file body.md`, then use
 to preserve notes outside the managed block.
 
 MIT contributions only. Future work includes authenticated synthetic fixtures,
-discovery adapters, remote persistence and opt-in browser execution via MCP.
+additional discovery adapters, remote persistence and opt-in browser execution via MCP.
 Keep the default MCP server read-only.

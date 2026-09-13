@@ -13,7 +13,9 @@ test('real stdio MCP initialization, tool discovery, query, errors and missing i
   t.after(() => client.close());
   await client.connect(transport);
   const tools = (await client.listTools()).tools;
-  assert.equal(tools.length, 9);
+  assert.equal(tools.length, 12);
+  const indexStatus = await client.callTool({ name: 'get_index_status', arguments: { project: 'demo' } });
+  assert.equal(indexStatus.structuredContent.status, 'not_configured');
   assert.ok(tools.every(tool => tool.annotations.readOnlyHint && !tool.annotations.openWorldHint));
   const result = await client.callTool({ name: 'get_flow_evidence', arguments: { project: 'demo', flow: 'help' } });
   assert.equal(result.structuredContent.runs[0].result, 'verified');

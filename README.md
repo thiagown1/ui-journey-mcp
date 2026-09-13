@@ -6,9 +6,11 @@ Independent MIT-licensed MCP server and CLI for mapped UI flows and immutable
 browser evidence. No dependency on Codebase Memory, GitHub or any application.
 Runs locally; no model API, hosted account or telemetry.
 
-Status: **experimental v0.1**. Read-only MCP queries work with saved evidence;
-the CLI can validate anonymous flows against a local test application. Automatic
-route discovery, authenticated fixtures and remote MCP hosting are not included.
+Status: **experimental v0.2**. Incremental source indexing discovers Next App
+Router and Flutter Modular navigation. MCP queries refresh the configured checkout
+and separately retrieve saved execution evidence. The CLI can validate anonymous
+flows against a local test application. Authenticated fixtures and remote MCP
+hosting are not included.
 
 ## Example queries
 
@@ -91,6 +93,13 @@ configured store to keep evidence up to date.
 
 ## Try a local flow
 
+To keep a source navigation map synchronized, configure `.ui-journey.json` in
+your application and pass `--repo /path/to/checkout` to `serve`. Use
+`get_index_status`, `get_navigation_map` and `get_navigation_impact` for inferred
+routes/actions. Existing evidence queries remain about executed/declared flows.
+See [source synchronization and CI integration](docs/ci-integration.md) for
+adapters, exact-revision comparison and before/after images in PR descriptions.
+
 ```sh
 npx playwright install chromium
 node examples/serve.js
@@ -118,6 +127,9 @@ outgoing transitions are captured too. Test fixtures must be deterministic.
 
 | Tool | Result |
 | --- | --- |
+| `get_index_status` | Refresh source index; report commit, content hash, dirty state and limits |
+| `get_navigation_map` | Refresh and paginate inferred routes, actions, edges or diagnostics |
+| `get_navigation_impact` | Refresh and find potentially affected routes in the checkout |
 | `list_flows` | Mapped flows and available revisions; paginated |
 | `get_flow` | Declared map, executed contract and evidence summary |
 | `get_flow_evidence` | Outcomes, state screenshots, run, version and freshness |
@@ -128,8 +140,10 @@ outgoing transitions are captured too. Test fixtures must be deterministic.
 | `get_change_evidence` | Stored runs carrying a particular PR number |
 | `get_evidence_image` | A referenced PNG as inline MCP image content |
 
-CLI queries use the same names and JSON arguments. All nine MCP tools are read-only.
-Browser execution is an explicit CLI operation, not an MCP tool in v0.1.
+Evidence CLI queries use the same names and JSON arguments. Source indexing uses
+the `index` and `compare-index` CLI commands. All twelve MCP tools leave application
+source unchanged; navigation queries update a derived private index cache.
+Browser execution is an explicit CLI operation, not an MCP tool.
 
 ### Selection and provenance
 
@@ -148,8 +162,9 @@ Browser execution is an explicit CLI operation, not an MCP tool in v0.1.
   Both are stored: deleting an action cannot erase a failed attempt to execute it.
 - Comparison is structural/status-based, not an aesthetic or pixel correctness
   verdict. Missing environment metadata gives `environmentComparable: null`.
-- Coverage and impact include **mapped flows and recorded dependencies only**.
-  This server does not yet crawl an application or discover routes itself.
+- Execution coverage includes **declared flows and recorded dependencies only**.
+  The separate source index discovers supported routing conventions. It does not
+  crawl the UI, prove runtime reachability or automatically create browser tests.
 
 ## Import CI evidence
 

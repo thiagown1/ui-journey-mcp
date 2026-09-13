@@ -1,13 +1,27 @@
 {
   "name": "ui-journey-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mapped UI flows and revision-bound browser evidence over MCP and CLI",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22" },
-  "bin": { "ui-journey": "bin/ui-journey.js" },
-  "exports": { ".": "./src/index.js" },
-  "files": ["bin", "src", "examples", "README.md", "CONTRIBUTING.md", "LICENSE"],
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "ui-journey": "bin/ui-journey.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "examples",
+    "docs",
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:browser": "node --test test/browser.integration.js",
@@ -16,7 +30,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
+    "typescript": "5.9.3",
     "zod": "4.6.2"
   },
-  "optionalDependencies": { "playwright": "1.63.0" }
+  "optionalDependencies": {
+    "playwright": "1.63.0"
+  }
 }
