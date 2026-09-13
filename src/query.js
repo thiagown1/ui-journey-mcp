@@ -26,7 +26,9 @@ function choose(records, args) {
     found = found.filter(r => Date.parse(r.observedAt) === latest);
     if (new Set(found.map(r => r.run)).size > 1) return { status: 'selection_required', reason: 'run_required_tied_time', runs: [...new Set(found.map(r => r.run))].sort() };
   }
-  if (new Set(found.map(r => fingerprint(r.flow))).size > 1 || new Set(found.map(r => r.viewport.name)).size !== found.length)
+  if (new Set(found.map(r => fingerprint(r.flow))).size > 1 ||
+      new Set(found.map(r => fingerprint(r.declaredFlow === undefined ? r.flow : r.declaredFlow))).size > 1 ||
+      new Set(found.map(r => r.viewport.name)).size !== found.length)
     return { status: 'selection_required', reason: 'conflicting_records', recordIds: found.map(r => r.recordId) };
   return { status: 'found', project: args.project, flow: args.flow, revision: revisions[0],
     freshness: args.currentRevision ? (args.currentRevision === revisions[0] ? 'matches_requested_revision' : 'stale') : 'unknown', records: found };

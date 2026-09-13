@@ -36,6 +36,11 @@ test('real browser captures a flow, returns PNG through MCP, records a regressio
   const result = await client.callTool({ name: 'get_evidence_image', arguments: { project: 'demo', digest: imageDigest } });
   assert.equal(result.content[0].type, 'image');
   assert.deepEqual(Buffer.from(result.content[0].data, 'base64'), bytes);
+  const audit = await client.callTool({ name: 'audit_ui', arguments: { project: 'demo', flow: 'help', revision: first.revision,
+    checks: ['design'], designRules: ['Use a consistent primary action style.'] } });
+  assert.equal(audit.structuredContent.design.status, 'ready_for_agent_review');
+  assert.equal(audit.structuredContent.design.current.runs[0].states[1].images[0].digest, imageDigest);
+  assert.equal(audit.structuredContent.design.verdict, 'not_evaluated');
   // Synthetic demo evidence only; never copy application/customer data here.
   const output = new URL('../test-results/', import.meta.url);
   await fs.mkdir(output, { recursive: true });

@@ -6,7 +6,7 @@ Independent MIT-licensed MCP server and CLI for mapped UI flows and immutable
 browser evidence. No dependency on Codebase Memory, GitHub or any application.
 Runs locally; no model API, hosted account or telemetry.
 
-Status: **experimental v0.2**. Incremental source indexing discovers Next App
+Status: **experimental v0.3**. Incremental source indexing discovers Next App
 Router and Flutter Modular navigation. MCP queries refresh the configured checkout
 and separately retrieve saved execution evidence. The CLI can validate anonymous
 flows against a local test application. Authenticated fixtures and remote MCP
@@ -17,6 +17,7 @@ hosting are not included.
 ```text
 get_flow_evidence(project="shop", flow="checkout", revision="<40-character SHA>")
 compare_flow(project="shop", flow="checkout", before="<SHA>", after="<SHA>")
+audit_ui(project="shop", flow="checkout", revision="<SHA>", entryRoutes=["/shop"], terminalStates=["complete"])
 get_evidence_image(project="shop", digest="<image hash from the result>")
 ```
 
@@ -82,6 +83,9 @@ For UI changes, consult UI Journey MCP using project="your-project":
 - Use get_ui_impact for changed files and inspect relevant mapped flows.
 - Use get_flow_evidence or compare_flow with exact commit revisions.
 - Retrieve screenshots with get_evidence_image when reviewing visual evidence.
+- Use audit_ui on affected flows at the exact revision. Supply known entry routes,
+  intended terminal states and the project's design rules or reference flow.
+- Treat flow/design suggestions as review tasks, not automatic approval.
 - Report missing, failed, stale or unverified evidence explicitly. Never treat
   mapping alone as a successful browser validation.
 - If the server is unavailable, state that limitation; do not invent evidence.
@@ -130,6 +134,7 @@ outgoing transitions are captured too. Test fixtures must be deterministic.
 | `get_index_status` | Refresh source index; report commit, content hash, dirty state and limits |
 | `get_navigation_map` | Refresh and paginate inferred routes, actions, edges or diagnostics |
 | `get_navigation_impact` | Refresh and find potentially affected routes in the checkout |
+| `audit_ui` | Exact-revision entry/return paths, step budgets, execution gaps and a design review packet |
 | `list_flows` | Mapped flows and available revisions; paginated |
 | `get_flow` | Declared map, executed contract and evidence summary |
 | `get_flow_evidence` | Outcomes, state screenshots, run, version and freshness |
@@ -141,9 +146,16 @@ outgoing transitions are captured too. Test fixtures must be deterministic.
 | `get_evidence_image` | A referenced PNG as inline MCP image content |
 
 Evidence CLI queries use the same names and JSON arguments. Source indexing uses
-the `index` and `compare-index` CLI commands. All twelve MCP tools leave application
+the `index` and `compare-index` CLI commands; audits use `audit --args JSON`.
+All thirteen MCP tools leave application
 source unchanged; navigation queries update a derived private index cache.
 Browser execution is an explicit CLI operation, not an MCP tool.
+
+See the [UI audit guide](docs/ui-audit.md) for arguments, output states, design
+reference selection, CI policy and examples. Audit results distinguish structural
+facts, inferred gaps, recorded failures and suggestions. Visual review belongs to
+the calling agent: the server supplies verified image references and context,
+never an aesthetic pass/fail verdict or a claim that all application flows work.
 
 ### Selection and provenance
 

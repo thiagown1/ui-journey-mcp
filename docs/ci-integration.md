@@ -95,3 +95,18 @@ The MCP recommends these stages in its server instructions and status response.
 It does not edit GitHub or change branch protection. Screenshots remain historical
 until a collector executes the changed code; updating the static map never marks
 old evidence as newly verified.
+
+## Optional UI audit stage
+
+After importing evidence, call `audit --args JSON --store PATH --repo CHECKOUT`
+for each affected mapped flow and exact head SHA. Supply application-owned entry
+routes, terminal states and design rules/reference. Preserve the JSON report as
+an artifact; inspect statuses and findings explicitly rather than treating CLI
+exit zero or `completed` as approval. Visual review requires the calling agent
+to retrieve and inspect the referenced images. See [UI audits](ui-audit.md).
+
+Only affected-flow evidence belongs in the product-change PR block. Harness
+self-tests must keep their demo screenshots in test artifacts. A flow without
+applicable execution is a coverage gap, never a reason to substitute an unrelated
+pilot screen. The consuming repository owns this selection and publication
+policy; adding the MCP tool alone does not modify its workflows.

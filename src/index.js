@@ -5,3 +5,4 @@ export { importGraph, importSnapshot } from './import.js';
 export { flowSchema, snapshotSchema } from './schema.js';
 export { validateFlow } from './browser.js';
 export { NavigationIndex, compareNavigation } from './navigation.js';
+export { auditUI, auditSchema } from './audit.js';
